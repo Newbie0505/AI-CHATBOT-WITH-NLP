@@ -1,0 +1,76 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["Hi", "Hello", "Hey", "Good morning", "Good evening", "What's up", "Howdy", "Sup"],
+      "responses": ["Hello! How can I help you?", "Hi there! What's on your mind?", "Hey! Good to see you.", "Hello! What can I do for you today?"]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "Goodbye", "See you", "Later", "Take care", "See you later", "I'm leaving", "Exit"],
+      "responses": ["Goodbye! Have a great day!", "See you later!", "Take care!", "Bye! Come back anytime."]
+    },
+    {
+      "tag": "name",
+      "patterns": ["What is your name?", "Who are you?", "What should I call you?", "Tell me your name", "Your name?"],
+      "responses": ["I'm PyBot, your NLP assistant!", "Call me PyBot!", "I'm an AI chatbot built with Python and NLP."]
+    },
+    {
+      "tag": "help",
+      "patterns": ["Help", "I need help", "Can you assist me?", "What can you do?", "Help me", "Support"],
+      "responses": ["I can answer your questions! Just ask me anything.", "I'm here to help. What do you need?", "Sure, how can I assist you?"]
+    },
+    {
+      "tag": "age",
+      "patterns": ["How old are you?", "What is your age?", "When were you born?", "Your age?"],
+      "responses": ["I'm ageless — I live in the cloud!", "Age is just a number for bots!", "I was born when someone ran train.py!"]
+    },
+    {
+      "tag": "creator",
+      "patterns": ["Who created you?", "Who made you?", "Who built you?", "Who is your developer?"],
+      "responses": ["I was built by a Python developer using NLTK and scikit-learn!", "A passionate coder built me as an internship project!", "My creator used Python, NLP, and a lot of coffee!"]
+    },
+    {
+      "tag": "weather",
+      "patterns": ["What is the weather?", "How is the weather today?", "Is it raining?", "Weather update"],
+      "responses": ["I don't have live weather data, but check weather.com!", "Sorry, I can't fetch live weather. Try a weather app!", "I wish I could tell you, but I don't have internet access."]
+    },
+    {
+      "tag": "joke",
+      "patterns": ["Tell me a joke", "Say something funny", "Make me laugh", "Joke", "Funny"],
+      "responses": [
+        "Why do Python programmers wear glasses? Because they can't C!",
+        "Why did the AI break up with the internet? Too many connections!",
+        "I told my AI a joke. It said: 'That does not compute.' Tough crowd!"
+      ]
+    },
+    {
+      "tag": "thanks",
+      "patterns": ["Thanks", "Thank you", "That was helpful", "Appreciate it", "Cheers", "Great thanks"],
+      "responses": ["You're welcome!", "Happy to help!", "Anytime!", "Glad I could assist!"]
+    },
+    {
+      "tag": "python",
+      "patterns": ["Tell me about Python", "What is Python?", "Python programming", "Why use Python?"],
+      "responses": [
+        "Python is a versatile, easy-to-read programming language great for AI, web dev, and automation!",
+        "Python is the #1 language for machine learning and data science. Love it!",
+        "Python: simple syntax, powerful libraries, and a huge community. Perfect for beginners!"
+      ]
+    },
+    {
+      "tag": "nlp",
+      "patterns": ["What is NLP?", "Tell me about NLP", "Natural Language Processing", "How does NLP work?"],
+      "responses": [
+        "NLP stands for Natural Language Processing — it helps computers understand human language!",
+        "NLP is the AI field that deals with text and speech processing. I'm built on it!",
+        "Natural Language Processing lets machines read, understand, and generate human language."
+      ]
+    },
+    {
+      "tag": "time",
+      "patterns": ["What time is it?", "Current time", "Tell me the time", "Time please"],
+      "responses": ["I don't have a clock, but your device does! Check the taskbar.", "Sorry, I can't tell real-time, but your OS can!"]
+    }
+  ]
+}
