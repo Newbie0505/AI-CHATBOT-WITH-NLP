@@ -1,11 +1,22 @@
+#Title: AI CHATBOT WITH NLP
+#Subtitle: Smart conversational AI assistant with NLP, multilingual intelligence, voice input, vision analysis, and real-time web-enhanced responses
 
+#Name: Ankush Dhanokar
 
+#Intern ID: CTIS9672
 
+#Company: Codtech IT Solutions
 
+#Domain: Python Programming
 
+#Duration: 12 Weeks
 
+#Mentor: Neela Santosh
+
+#OutPut:
 
 https://github.com/user-attachments/assets/99c41693-fc02-4108-9b3b-af6f672e7e97
+
 # AI Chatbot with NLP
 
 A lightweight terminal-based chatbot built in Python using **NLTK** and **scikit-learn**. It uses a Multinomial Naïve Bayes classifier to understand user intents and respond intelligently.
