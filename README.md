@@ -1,76 +1,112 @@
-# 🤖 AI Chatbot with NLP
+AI Chatbot with NLP
+A lightweight, terminal-based chatbot built in Python that actually understands what you're asking. It uses NLTK for text processing and scikit-learn’s Multinomial Naïve Bayes classifier to detect intent and respond appropriately.
+I created this project to experiment with traditional NLP techniques and build something simple yet functional without depending on heavy LLMs.
 
-A terminal-based AI chatbot built with Python, NLTK, and scikit-learn.
-Uses a Multinomial Naïve Bayes classifier trained on custom intents to understand and respond to user queries.
-
-## 🚀 Quick Start
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/YourUsername/ai-chatbot-nlp.git
+🚀 Quick Start
+Bashgit clone https://github.com/YourUsername/ai-chatbot-nlp.git
 cd ai-chatbot-nlp
 
-# 2. Create virtual environment
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS / Linux
 
-# 3. Install dependencies
+# Windows
+venv\Scripts\activate
+# macOS / Linux
+# source venv/bin/activate
+
 pip install -r requirements.txt
 
-# 4. Run (auto-trains on first launch)
 python main.py
-```
+The chatbot will train itself the first time you run it.
 
-## 📁 Project Structure
-
-```
-ai-chatbot-nlp/
+📁 Project Structure
+plaintextai-chatbot-nlp/
 ├── data/
-│   └── intents.json        # Training data: patterns & responses
+│   └── intents.json
 ├── src/
-│   ├── preprocess.py       # Tokenization & stemming (NLTK)
-│   ├── train.py            # Model training (scikit-learn)
-│   └── chatbot.py          # Interactive chatbot loop
-├── model/                  # Auto-generated after training
+│   ├── preprocess.py
+│   ├── train.py
+│   └── chatbot.py
+├── model/
 │   ├── chatbot_model.pkl
 │   └── vectorizer.pkl
-├── main.py                 # Entry point
+├── main.py
 ├── requirements.txt
 └── README.md
-```
 
-## 💬 Commands
+✨ Features
 
-| Command | Action |
-|---|---|
-| `python main.py` | Auto-train (if needed) then start chat |
-| `python main.py --train` | Force retrain the model |
-| `python main.py --chat` | Skip training, go straight to chat |
-| Type `debug` in chat | Toggle intent + confidence display |
-| Type `quit` or `exit` | Stop the chatbot |
+Fast and fully offline
+Easy to customize and extend
+Debug mode showing intent and confidence
+Clean, responsive command-line interface
 
-## ➕ Adding New Topics
 
-Edit `data/intents.json` and add a new intent block:
+🛠 Commands
 
-```json
-{
-  "tag": "your_topic",
-  "patterns": ["How do I...", "Tell me about..."],
-  "responses": ["Here's what I know...", "Great question!"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CommandDescriptionpython main.pyStart the chatbot (auto-trains if needed)python main.py --trainForce retrain the modelpython main.py --chatSkip training and jump straight to chatdebugToggle intent + confidence displayquit or exitExit the program
+
+How It Works
+The chatbot follows a simple but effective pipeline:
+
+Preprocessing — Text is tokenized, stemmed, and cleaned using NLTK.
+Vectorization — Converted into numerical features using CountVectorizer.
+Classification — A Multinomial Naïve Bayes model predicts the best matching intent.
+Response — A random response from the matched intent is returned.
+
+All trained models are saved in the model/ folder for fast loading on future runs.
+
+➕ Adding New Intents
+Open data/intents.json and add new blocks like this:
+JSON{
+  "tag": "weather",
+  "patterns": ["What's the weather like?", "Is it raining today?"],
+  "responses": ["I'm a text bot, so I can't check live weather yet!", "Wish I could tell you — but I'm not connected to the internet."]
 }
-```
+Then retrain:
+Bashpython main.py --train
 
-Then retrain: `python main.py --train`
+🛠 Tech Stack
 
-## 🛠 Tech Stack
+Python 3.10+
+NLTK
+scikit-learn
+Pickle
 
-- **Python 3.10+**
-- **NLTK** — tokenization & stemming
-- **scikit-learn** — CountVectorizer + MultinomialNB
-- **pickle** — model persistence
 
-## 📄 License
+📌 Future Ideas
 
-MIT
+Add conversation memory
+Improve fallback responses
+Build a simple web interface
+
+
+📄 License
+MIT License — feel free to use and modify as you like.
