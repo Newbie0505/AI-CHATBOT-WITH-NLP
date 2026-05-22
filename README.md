@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+https://github.com/user-attachments/assets/99c41693-fc02-4108-9b3b-af6f672e7e97
 # AI Chatbot with NLP
 
 A lightweight terminal-based chatbot built in Python using **NLTK** and **scikit-learn**. It uses a Multinomial Naïve Bayes classifier to understand user intents and respond intelligently.
