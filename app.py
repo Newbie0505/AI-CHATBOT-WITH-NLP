@@ -127,8 +127,8 @@ def run_web_search(query):
 
 # --- Direct HTTP API Request Client Handler ---
 def call_gemini_api(contents_payload):
-    # Fixed production path pattern layout string
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+    # Standard stable endpoint routing structure
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": contents_payload}
     
@@ -138,7 +138,7 @@ def call_gemini_api(contents_payload):
     else:
         raise Exception(f"API Error {response.status_code}: {response.text}")
 
-# --- Core Chat Core Process Engine ---
+# --- Core Chat Process Engine ---
 def process_chat_interaction(user_input, language_config):
     timestamp_now = datetime.now().strftime("%I:%M %p")
     st.session_state.messages.append({
