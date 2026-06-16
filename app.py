@@ -5,7 +5,8 @@ from PIL import Image
 import streamlit as st
 import speech_recognition as sr
 from duckduckgo_search import DDGS
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # --- Page Config ---
 st.set_page_config(
@@ -14,18 +15,21 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- UI Custom Styling ---
+# --- Fixed UI Custom Styling ---
 st.markdown("""
 <style>
     .stApp { background-color: #0f172a; }
-    .chat-row { display: flex; align-items: flex-end; margin: 10px 0; gap: 10px; }
+    .chat-row { display: flex; align-items: flex-start; margin: 14px 0; gap: 12px; width: 100%; }
     .chat-row.user { flex-direction: row-reverse; }
     .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
     .avatar.bot  { background-color: #1e40af; }
     .avatar.user { background-color: #7c3aed; }
-    .bubble { padding: 12px 16px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
-    .bubble.bot  { background-color: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; }
-    .bubble.user { background-color: #1e40af; color: white; border-bottom-right-radius: 4px; text-align: right; }
+    .bubble-container { display: flex; flex-direction: column; max-width: 70%; }
+    .chat-row.user .bubble-container { align-items: flex-end; }
+    .chat-row.bot .bubble-container { align-items: flex-start; }
+    .bubble { padding: 12px 16px; border-radius: 18px; word-wrap: break-word; width: fit-content; min-width: 40px; }
+    .bubble.bot  { background-color: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; text-align: left; }
+    .bubble.user { background-color: #1e40af; color: white; border-bottom-right-radius: 4px; text-align: left; }
     .timestamp, .source-badge { font-size: 10px; color: #475569; margin-top: 4px; }
     .typing { display: flex; align-items: center; gap: 4px; padding: 12px 16px; background-color: #1e293b; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; }
     .dot { width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; animation: bounce 1.2s infinite; }
@@ -41,7 +45,8 @@ st.markdown("""
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", None)
 
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    # Initializing modern v1 SDK client interface mapping 
+    client = genai.Client(api_key=GEMINI_API_KEY)
     ai_available = True
 else:
     ai_available = False
@@ -73,7 +78,7 @@ LANGUAGES = {
         "placeholder": "உங்கள் செய்தியை இங்கே தட்டச்சு செய்யுங்கள்...",
         "instruction": "Always respond in Tamil script.",
         "clear": "🗑️ அரட்டையை அழி",
-        "upload_label": "📷 படத்தை பதிвеற்றவும்",
+        "upload_label": "📷 படத்தை பதிவேற்றவும்",
         "analyze_btn": "🔍 படத்தை பகுப்பாய்வு செய்",
         "ask_image": "இந்த படத்தைப் பற்றி கேளுங்கள்...",
         "voice_label": "🎤 தமிழில் பேசுங்கள்",
@@ -145,19 +150,15 @@ def process_chat_interaction(user_input, language_config):
         else:
             prompt = f"Instruction: {language_config['instruction']}\nUser: {user_input}"
 
-        # Safe Multi-Model Target Fallback Controller Loop
-        response = None
-        for model_name in ["gemini-1.5-flash", "gemini-1.0-pro", "text-bison-001"]:
-            try:
-                model = genai.GenerativeModel(model_name)
-                response_obj = model.generate_content(prompt)
-                response = response_obj.text
-                break
-            except Exception:
-                continue
-        
-        if not response:
-            response = "The server experienced a temporary model lookup error. Please verify your API Key status in Google AI Studio."
+        try:
+            # Modern unified execution string across text and analytics paths
+            response_obj = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+            )
+            response = response_obj.text
+        except Exception as e:
+            response = f"API Execution Error: {str(e)}"
             source_label = "❌ Routing Error"
     else:
         response = "API Key configuration missing. Please add GEMINI_API_KEY into Advanced Settings -> Secrets."
@@ -175,9 +176,9 @@ def render_ui_message(role, content, timestamp, source="", uploaded_img=None):
         st.markdown(f"""
         <div class='chat-row user'>
             <div class='avatar user'>👤</div>
-            <div>
+            <div class='bubble-container'>
                 <div class='bubble user'>{content}</div>
-                <div class='timestamp' style='text-align:right'>{timestamp}</div>
+                <div class='timestamp'>{timestamp}</div>
             </div>
         </div>""", unsafe_allow_html=True)
         if uploaded_img:
@@ -188,7 +189,7 @@ def render_ui_message(role, content, timestamp, source="", uploaded_img=None):
         st.markdown(f"""
         <div class='chat-row bot'>
             <div class='avatar bot'>🤖</div>
-            <div>
+            <div class='bubble-container'>
                 <div class='bubble bot'>{content}</div>
                 <div class='source-badge'>{source}</div>
                 <div class='timestamp'>{timestamp}</div>
@@ -255,20 +256,17 @@ with st.expander("📷 Vision Object Analytics"):
                 "timestamp": time_stamp, "image": image_asset.getvalue()
             })
             
-            ai_response = None
-            for v_model_name in ["gemini-1.5-flash", "gemini-pro-vision"]:
-                try:
-                    v_model = genai.GenerativeModel(v_model_name)
-                    ai_response = v_model.generate_content([final_query, raw_img]).text
-                    break
-                except Exception:
-                    continue
-            
-            if not ai_response:
-                ai_response = "Vision Engine failed to process the image format."
-                vision_source = "❌ Execution Error"
-            else:
+            try:
+                # Upgraded modern execution handling utilizing generative flash
+                response_obj = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[raw_img, final_query]
+                )
+                ai_response = response_obj.text
                 vision_source = "🖼️ Gemini Vision Engine"
+            except Exception as ex:
+                ai_response = f"Vision Stack Fault: {str(ex)}"
+                vision_source = "❌ Execution Error"
                 
             st.session_state.messages.append({
                 "role": "bot", "content": ai_response,
