@@ -1,5 +1,6 @@
 streamlit
+google-genai
 pillow
-speech_recognition
+SpeechRecognition
+pyaudio
 duckduckgo_search
-requests
