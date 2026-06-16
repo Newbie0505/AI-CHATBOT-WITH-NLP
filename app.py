@@ -139,8 +139,8 @@ def process_chat_interaction(user_input, language_config):
     
     if ai_available:
         try:
-            # Using universally resolved fallback string mapping to guarantee initialization compatibility
-            model = genai.GenerativeModel("gemini-pro")
+            # Updated to production ready stable naming strings
+            model = genai.GenerativeModel("gemini-1.5-flash")
             search_context = run_web_search(user_input)
             
             if search_context:
@@ -151,7 +151,7 @@ def process_chat_interaction(user_input, language_config):
 
             response = model.generate_content(prompt).text
         except Exception as err:
-            response = f"Engine Gateway Timeout: {str(err)}"
+            response = f"Engine Gateway Fault: {str(err)}"
             source_label = "❌ Stack Error"
     else:
         response = "API Key configuration missing. Please add GEMINI_API_KEY into Advanced Settings -> Secrets."
@@ -249,7 +249,8 @@ with st.expander("📷 Vision Object Analytics"):
                 "timestamp": time_stamp, "image": image_asset.getvalue()
             })
             try:
-                v_model = genai.GenerativeModel("gemini-pro-vision")
+                # Updated to modern flash multimodal implementation
+                v_model = genai.GenerativeModel("gemini-1.5-flash")
                 ai_response = v_model.generate_content([final_query, raw_img]).text
                 vision_source = "🖼️ Gemini Vision Engine"
             except Exception as ex:
