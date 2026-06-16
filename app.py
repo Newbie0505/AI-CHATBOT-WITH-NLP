@@ -2,11 +2,12 @@ import os
 import time
 from datetime import datetime
 import base64
-import requests
 from PIL import Image
 import streamlit as st
 import speech_recognition as sr
 from duckduckgo_search import DDGS
+from google import genai
+from google.genai import types
 
 # --- Page Config ---
 st.set_page_config(
@@ -53,7 +54,14 @@ st.markdown("""
 
 # --- Fetch API Key safely from Streamlit Secrets ---
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", None)
-ai_available = True if GEMINI_API_KEY else False
+
+# Initialize SDK client if key is available
+if GEMINI_API_KEY:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    ai_available = True
+else:
+    client = None
+    ai_available = False
 
 # --- Localization Mappings ---
 LANGUAGES = {
@@ -126,19 +134,6 @@ def run_web_search(query):
         pass
     return None
 
-# --- Direct HTTP API Request Client Handler ---
-def call_gemini_api(contents_payload):
-    # Updated to stable production V1 endpoint to fix your 404 lookup issue
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    payload = {"contents": contents_payload}
-    
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code == 200:
-        return response.json()['candidates'][0]['content']['parts'][0]['text']
-    else:
-        raise Exception(f"API Error {response.status_code}: {response.text}")
-
 # --- Core Chat Process Engine ---
 def process_chat_interaction(user_input, language_config):
     timestamp_now = datetime.now().strftime("%I:%M %p")
@@ -158,9 +153,9 @@ def process_chat_interaction(user_input, language_config):
     time.sleep(0.3)
     typing_box.empty()
 
-    source_label = "🧠 Core Gemini Engine"
+    source_label = "🧠 Official Gemini SDK"
     
-    if ai_available:
+    if ai_available and client:
         search_context = run_web_search(user_input)
         if search_context:
             prompt = f"Context:\n{search_context}\n\nInstruction: {language_config['instruction']}\nUser: {user_input}"
@@ -169,11 +164,15 @@ def process_chat_interaction(user_input, language_config):
             prompt = f"Instruction: {language_config['instruction']}\nUser: {user_input}"
 
         try:
-            payload = [{"parts": [{"text": prompt}]}]
-            response = call_gemini_api(payload)
+            # Using the official modern genai SDK invocation wrapper format
+            response_obj = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt,
+            )
+            response = response_obj.text
         except Exception as e:
-            response = f"API Request Error: {str(e)}"
-            source_label = "❌ Routing Error"
+            response = f"SDK Engine Exception: {str(e)}"
+            source_label = "❌ Execution Error"
     else:
         response = "API Key configuration missing! Please add 'GEMINI_API_KEY' inside your Streamlit Cloud Advanced App Settings panel."
         source_label = "⚠️ System Warning"
@@ -261,7 +260,7 @@ with st.expander("📷 Vision Object Analytics"):
         st.image(raw_img, caption="Staged Vision Source Object", use_container_width=True)
         query_input = st.text_input(lang_config["ask_image"])
         
-        if st.button(lang_config["analyze_btn"]) and ai_available:
+        if st.button(lang_config["analyze_btn"]) and ai_available and client:
             time_stamp = datetime.now().strftime("%I:%M %p")
             final_query = query_input if query_input else "Describe this image in detail."
             
@@ -272,21 +271,14 @@ with st.expander("📷 Vision Object Analytics"):
             
             try:
                 image_asset.seek(0)
-                base64_image = base64.b64encode(image_asset.read()).decode('utf-8')
+                pil_img = Image.open(image_asset)
                 
-                payload = [{
-                    "parts": [
-                        {"text": final_query},
-                        {
-                            "inline_data": {
-                                "mime_type": f"image/{image_asset.name.split('.')[-1]}",
-                                "data": base64_image
-                            }
-                        }
-                    ]
-                }]
-                ai_response = call_gemini_api(payload)
-                vision_source = "🖼️ Gemini Vision Engine"
+                response_obj = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=[pil_img, final_query]
+                )
+                ai_response = response_obj.text
+                vision_source = "🖼️ Official Vision SDK"
             except Exception as ex:
                 ai_response = f"Vision Stack Fault: {str(ex)}"
                 vision_source = "❌ Execution Error"
