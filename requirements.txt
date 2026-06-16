@@ -2,4 +2,4 @@ streamlit
 pillow
 speech_recognition
 duckduckgo_search
-google-genai
+requests
