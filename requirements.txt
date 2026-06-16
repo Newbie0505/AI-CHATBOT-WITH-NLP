@@ -5,3 +5,4 @@ speechrecognition
 duckduckgo_search
 pillow
 google-generativeai
+groq
