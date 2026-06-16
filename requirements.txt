@@ -1,8 +1,5 @@
-streamlit
-nltk
-scikit-learn
-speechrecognition
-duckduckgo_search
-pillow
-google-generativeai
-groq
+streamlit>=1.35.0
+google-generativeai>=0.7.0
+duckduckgo_search>=6.1.7
+SpeechRecognition>=3.10.4
+Pillow>=10.3.0

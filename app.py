@@ -73,7 +73,7 @@ LANGUAGES = {
         "placeholder": "உங்கள் செய்தியை இங்கே தட்டச்சு செய்யுங்கள்...",
         "instruction": "Always respond in Tamil script.",
         "clear": "🗑️ அரட்டையை அழி",
-        "upload_label": "📷 படத்தை பதிவேற்றவும்",
+        "upload_label": "📷 படத்தை பதிвеற்றவும்",
         "analyze_btn": "🔍 படத்தை பகுப்பாய்வு செய்",
         "ask_image": "இந்த படத்தைப் பற்றி கேளுங்கள்...",
         "voice_label": "🎤 தமிழில் பேசுங்கள்",
@@ -132,27 +132,33 @@ def process_chat_interaction(user_input, language_config):
                 <div class='dot'></div><div class='dot'></div><div class='dot'></div>
             </div>
         </div>""", unsafe_allow_html=True)
-    time.sleep(0.6)
+    time.sleep(0.4)
     typing_box.empty()
 
     source_label = "🧠 Core Gemini Engine"
     
     if ai_available:
-        try:
-            # Updated to production ready stable naming strings
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            search_context = run_web_search(user_input)
-            
-            if search_context:
-                prompt = f"Context:\n{search_context}\n\nInstruction: {language_config['instruction']}\nUser: {user_input}"
-                source_label = "🌐 Web Integration Engine"
-            else:
-                prompt = f"Instruction: {language_config['instruction']}\nUser: {user_input}"
+        search_context = run_web_search(user_input)
+        if search_context:
+            prompt = f"Context:\n{search_context}\n\nInstruction: {language_config['instruction']}\nUser: {user_input}"
+            source_label = "🌐 Web Integration Engine"
+        else:
+            prompt = f"Instruction: {language_config['instruction']}\nUser: {user_input}"
 
-            response = model.generate_content(prompt).text
-        except Exception as err:
-            response = f"Engine Gateway Fault: {str(err)}"
-            source_label = "❌ Stack Error"
+        # Safe Multi-Model Target Fallback Controller Loop
+        response = None
+        for model_name in ["gemini-1.5-flash", "gemini-1.0-pro", "text-bison-001"]:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response_obj = model.generate_content(prompt)
+                response = response_obj.text
+                break
+            except Exception:
+                continue
+        
+        if not response:
+            response = "The server experienced a temporary model lookup error. Please verify your API Key status in Google AI Studio."
+            source_label = "❌ Routing Error"
     else:
         response = "API Key configuration missing. Please add GEMINI_API_KEY into Advanced Settings -> Secrets."
         source_label = "⚠️ System Warning"
@@ -248,14 +254,21 @@ with st.expander("📷 Vision Object Analytics"):
                 "role": "user", "content": f"[Vision Query] {final_query}",
                 "timestamp": time_stamp, "image": image_asset.getvalue()
             })
-            try:
-                # Updated to modern flash multimodal implementation
-                v_model = genai.GenerativeModel("gemini-1.5-flash")
-                ai_response = v_model.generate_content([final_query, raw_img]).text
-                vision_source = "🖼️ Gemini Vision Engine"
-            except Exception as ex:
-                ai_response = f"Vision Stack Fault: {str(ex)}"
+            
+            ai_response = None
+            for v_model_name in ["gemini-1.5-flash", "gemini-pro-vision"]:
+                try:
+                    v_model = genai.GenerativeModel(v_model_name)
+                    ai_response = v_model.generate_content([final_query, raw_img]).text
+                    break
+                except Exception:
+                    continue
+            
+            if not ai_response:
+                ai_response = "Vision Engine failed to process the image format."
                 vision_source = "❌ Execution Error"
+            else:
+                vision_source = "🖼️ Gemini Vision Engine"
                 
             st.session_state.messages.append({
                 "role": "bot", "content": ai_response,
