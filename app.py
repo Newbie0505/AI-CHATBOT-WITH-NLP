@@ -27,9 +27,19 @@ st.markdown("""
     .bubble-container { display: flex; flex-direction: column; max-width: 70%; }
     .chat-row.user .bubble-container { align-items: flex-end; }
     .chat-row.bot .bubble-container { align-items: flex-start; }
-    .bubble { padding: 12px 16px; border-radius: 18px; word-wrap: break-word; width: fit-content; min-width: 50px; }
+    
+    /* Added display block and min-width to prevent letter stacking */
+    .bubble { 
+        padding: 12px 16px; 
+        border-radius: 18px; 
+        word-wrap: break-word; 
+        display: inline-block;
+        min-width: fit-content;
+        white-space: pre-wrap;
+    }
     .bubble.bot  { background-color: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; text-align: left; }
     .bubble.user { background-color: #1e40af; color: white; border-bottom-right-radius: 4px; text-align: left; }
+    
     .timestamp, .source-badge { font-size: 10px; color: #475569; margin-top: 4px; }
     .typing { display: flex; align-items: center; gap: 4px; padding: 12px 16px; background-color: #1e293b; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; }
     .dot { width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; animation: bounce 1.2s infinite; }
@@ -116,9 +126,10 @@ def run_web_search(query):
         pass
     return None
 
-# --- Direct HTTP API Request Client Handlers ---
+# --- Updated Direct HTTP API Request Client Handlers ---
 def call_gemini_api(contents_payload):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # Updated API route URL pattern from v1beta to v1
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": contents_payload}
     
@@ -257,10 +268,10 @@ with st.expander("📷 Vision Object Analytics"):
             })
             
             try:
-                # Read file bytes and convert to Base64 data string
                 image_asset.seek(0)
                 base64_image = base64.b64encode(image_asset.read()).decode('utf-8')
                 
+                # Fixed inline_data block nesting structure
                 payload = [{
                     "parts": [
                         {"text": final_query},
