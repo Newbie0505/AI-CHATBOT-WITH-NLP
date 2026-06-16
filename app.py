@@ -28,13 +28,12 @@ st.markdown("""
     .chat-row.user .bubble-container { align-items: flex-end; }
     .chat-row.bot .bubble-container { align-items: flex-start; }
     
-    /* Added display block and min-width to prevent letter stacking */
     .bubble { 
         padding: 12px 16px; 
         border-radius: 18px; 
         word-wrap: break-word; 
         display: inline-block;
-        min-width: fit-content;
+        min-width: 60px;
         white-space: pre-wrap;
     }
     .bubble.bot  { background-color: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; text-align: left; }
@@ -126,10 +125,10 @@ def run_web_search(query):
         pass
     return None
 
-# --- Updated Direct HTTP API Request Client Handlers ---
+# --- Direct HTTP API Request Client Handler ---
 def call_gemini_api(contents_payload):
-    # Updated API route URL pattern from v1beta to v1
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # Fixed production path pattern layout string
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": contents_payload}
     
@@ -139,6 +138,7 @@ def call_gemini_api(contents_payload):
     else:
         raise Exception(f"API Error {response.status_code}: {response.text}")
 
+# --- Core Chat Core Process Engine ---
 def process_chat_interaction(user_input, language_config):
     timestamp_now = datetime.now().strftime("%I:%M %p")
     st.session_state.messages.append({
@@ -271,7 +271,6 @@ with st.expander("📷 Vision Object Analytics"):
                 image_asset.seek(0)
                 base64_image = base64.b64encode(image_asset.read()).decode('utf-8')
                 
-                # Fixed inline_data block nesting structure
                 payload = [{
                     "parts": [
                         {"text": final_query},
