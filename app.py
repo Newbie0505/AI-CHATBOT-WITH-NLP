@@ -1,12 +1,12 @@
 import os
 import time
 from datetime import datetime
+import base64
+import requests
 from PIL import Image
 import streamlit as st
 import speech_recognition as sr
 from duckduckgo_search import DDGS
-from google import genai
-from google.genai import types
 
 # --- Page Config ---
 st.set_page_config(
@@ -15,7 +15,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- Fixed UI Custom Styling ---
+# --- Fixed Layout Custom Styling ---
 st.markdown("""
 <style>
     .stApp { background-color: #0f172a; }
@@ -27,7 +27,7 @@ st.markdown("""
     .bubble-container { display: flex; flex-direction: column; max-width: 70%; }
     .chat-row.user .bubble-container { align-items: flex-end; }
     .chat-row.bot .bubble-container { align-items: flex-start; }
-    .bubble { padding: 12px 16px; border-radius: 18px; word-wrap: break-word; width: fit-content; min-width: 40px; }
+    .bubble { padding: 12px 16px; border-radius: 18px; word-wrap: break-word; width: fit-content; min-width: 50px; }
     .bubble.bot  { background-color: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; text-align: left; }
     .bubble.user { background-color: #1e40af; color: white; border-bottom-right-radius: 4px; text-align: left; }
     .timestamp, .source-badge { font-size: 10px; color: #475569; margin-top: 4px; }
@@ -43,15 +43,9 @@ st.markdown("""
 
 # --- Fetch API Key safely from Streamlit Secrets ---
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", None)
+ai_available = True if GEMINI_API_KEY else False
 
-if GEMINI_API_KEY:
-    # Initializing modern v1 SDK client interface mapping 
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    ai_available = True
-else:
-    ai_available = False
-
-# --- Localization & Translation Mappings ---
+# --- Localization Mappings ---
 LANGUAGES = {
     "English 🇬🇧": {
         "code": "en-US",
@@ -105,11 +99,11 @@ def record_voice(lang_code="en-US"):
         text = recognizer.recognize_google(audio, language=lang_code)
         return text, None
     except sr.WaitTimeoutError:
-        return None, "No speech detected. Please speak closer to your microphone."
+        return None, "No speech detected."
     except sr.UnknownValueError:
-        return None, "Audio was unclear. Please repeat or speak slower."
+        return None, "Audio was unclear."
     except Exception as e:
-        return None, f"Hardware/Service error: {str(e)}"
+        return None, f"Hardware error: {str(e)}"
 
 # --- Web Search Utility ---
 def run_web_search(query):
@@ -121,6 +115,18 @@ def run_web_search(query):
     except Exception:
         pass
     return None
+
+# --- Direct HTTP API Request Client Handlers ---
+def call_gemini_api(contents_payload):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    payload = {"contents": contents_payload}
+    
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json()['candidates'][0]['content']['parts'][0]['text']
+    else:
+        raise Exception(f"API Error {response.status_code}: {response.text}")
 
 def process_chat_interaction(user_input, language_config):
     timestamp_now = datetime.now().strftime("%I:%M %p")
@@ -151,17 +157,13 @@ def process_chat_interaction(user_input, language_config):
             prompt = f"Instruction: {language_config['instruction']}\nUser: {user_input}"
 
         try:
-            # Modern unified execution string across text and analytics paths
-            response_obj = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-            )
-            response = response_obj.text
+            payload = [{"parts": [{"text": prompt}]}]
+            response = call_gemini_api(payload)
         except Exception as e:
-            response = f"API Execution Error: {str(e)}"
+            response = f"API Error: {str(e)}"
             source_label = "❌ Routing Error"
     else:
-        response = "API Key configuration missing. Please add GEMINI_API_KEY into Advanced Settings -> Secrets."
+        response = "API Key configuration missing."
         source_label = "⚠️ System Warning"
 
     st.session_state.messages.append({
@@ -178,7 +180,7 @@ def render_ui_message(role, content, timestamp, source="", uploaded_img=None):
             <div class='avatar user'>👤</div>
             <div class='bubble-container'>
                 <div class='bubble user'>{content}</div>
-                <div class='timestamp'>{timestamp}</div>
+                <div class='timestamp' style='text-align: right;'>{timestamp}</div>
             </div>
         </div>""", unsafe_allow_html=True)
         if uploaded_img:
@@ -207,11 +209,9 @@ with col_title:
 
 st.divider()
 
-# --- State Instantiation ---
 if "messages" not in st.session_state: st.session_state.messages = []
 if "language" not in st.session_state: st.session_state.language = "English 🇬🇧"
 
-# --- Control Panel Setup ---
 selected_lang = st.selectbox(
     "🌐 Localization Configuration",
     list(LANGUAGES.keys()),
@@ -224,7 +224,7 @@ if selected_lang != st.session_state.language:
 
 lang_config = LANGUAGES[st.session_state.language]
 
-# --- Panels (Voice & Vision Layout Panels) ---
+# --- Panels ---
 with st.expander("🎤 Voice Synthesizer Capture"):
     st.info(lang_config["voice_label"])
     if st.button("🔴 Initialize Microphone Stream", use_container_width=True):
@@ -257,12 +257,22 @@ with st.expander("📷 Vision Object Analytics"):
             })
             
             try:
-                # Upgraded modern execution handling utilizing generative flash
-                response_obj = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=[raw_img, final_query]
-                )
-                ai_response = response_obj.text
+                # Read file bytes and convert to Base64 data string
+                image_asset.seek(0)
+                base64_image = base64.b64encode(image_asset.read()).decode('utf-8')
+                
+                payload = [{
+                    "parts": [
+                        {"text": final_query},
+                        {
+                            "inline_data": {
+                                "mime_type": f"image/{image_asset.name.split('.')[-1]}",
+                                "data": base64_image
+                            }
+                        }
+                    ]
+                }]
+                ai_response = call_gemini_api(payload)
                 vision_source = "🖼️ Gemini Vision Engine"
             except Exception as ex:
                 ai_response = f"Vision Stack Fault: {str(ex)}"
@@ -277,7 +287,6 @@ with st.expander("📷 Vision Object Analytics"):
 
 st.divider()
 
-# --- Main Message Render Feed ---
 for msg in st.session_state.messages:
     render_ui_message(
         msg["role"], msg["content"],
@@ -285,13 +294,11 @@ for msg in st.session_state.messages:
         msg.get("image", None)
     )
 
-# --- Standard Chat Input ---
 chat_text = st.chat_input(lang_config["placeholder"])
 if chat_text:
     process_chat_interaction(chat_text, lang_config)
     st.rerun()
 
-# --- Admin Sidebar Panels ---
 with st.sidebar:
     st.markdown("### ⚙️ Engine Diagnostics")
     if st.button(lang_config["clear"], use_container_width=True):
