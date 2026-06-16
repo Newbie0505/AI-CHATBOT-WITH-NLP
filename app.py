@@ -47,6 +47,7 @@ st.markdown("""
     @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
     h1 { color: #3b82f6 !important; }
     .online-badge { display: inline-block; width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; margin-right: 6px; }
+    .offline-badge { display: inline-block; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; margin-right: 6px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -127,8 +128,8 @@ def run_web_search(query):
 
 # --- Direct HTTP API Request Client Handler ---
 def call_gemini_api(contents_payload):
-    # Standard stable endpoint routing structure
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # Updated to stable production V1 endpoint to fix your 404 lookup issue
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": contents_payload}
     
@@ -154,7 +155,7 @@ def process_chat_interaction(user_input, language_config):
                 <div class='dot'></div><div class='dot'></div><div class='dot'></div>
             </div>
         </div>""", unsafe_allow_html=True)
-    time.sleep(0.4)
+    time.sleep(0.3)
     typing_box.empty()
 
     source_label = "🧠 Core Gemini Engine"
@@ -171,10 +172,10 @@ def process_chat_interaction(user_input, language_config):
             payload = [{"parts": [{"text": prompt}]}]
             response = call_gemini_api(payload)
         except Exception as e:
-            response = f"API Error: {str(e)}"
+            response = f"API Request Error: {str(e)}"
             source_label = "❌ Routing Error"
     else:
-        response = "API Key configuration missing."
+        response = "API Key configuration missing! Please add 'GEMINI_API_KEY' inside your Streamlit Cloud Advanced App Settings panel."
         source_label = "⚠️ System Warning"
 
     st.session_state.messages.append({
@@ -215,8 +216,10 @@ with col_logo:
     st.markdown("<div style='font-size:52px; text-align:center; padding-top:10px;'>🤖</div>", unsafe_allow_html=True)
 with col_title:
     st.title("PyBot Ecosystem")
-    app_status = "✅ Gemini Engine Online" if ai_available else "⚠️ API Secret Key Missing"
-    st.markdown(f"<span class='online-badge'></span>{app_status}", unsafe_allow_html=True)
+    if ai_available:
+        st.markdown("<span class='online-badge'></span>✅ Gemini Engine Online", unsafe_allow_html=True)
+    else:
+        st.markdown("<span class='offline-badge'></span>⚠️ API Secret Key Missing", unsafe_allow_html=True)
 
 st.divider()
 
